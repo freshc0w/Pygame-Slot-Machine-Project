@@ -1,0 +1,244 @@
+1. Create game class and initialise everything w/ pygame.init()
+
+2. Set up basic initialiser:
+    SCREEN SIZE using .display.set_mode()
+    CAPTION using .display.set_caption()
+    CLOCK .time.Clock()
+    BG image using .image.load()
+
+3. Machine Class created
+    self.delta_time initialised to be 0.
+
+4. Set up main SOUND using pygame.mixer.Sound()
+    looped using main_sound.play(loops = -1)
+
+
+5. def run() method:
+    - Set start_time to be time.get_ticks()
+    - Handle QUIT operation.
+    - Set up time variables using delta_time 
+    - updates screen constantly using .display.update()
+    - self.screen.blit(source_image, (0,0)) # Drawing one image to another 
+    - self.machine.update(delta_time)
+    - self.clock.tick(FPS)
+
+6. Set up the symbol images
+    - Define SYM_PATH
+    - set up symbol images using a dictionary with their corresponding
+        paths.
+
+7. In the machine class, initialise display_surface using .display.get_surface()
+
+8. We need to spawn the reels in the Machine class.
+    - firstly, check if the specified reels are empty.
+    - then set the x_top_left and y_top_left taking the X_OFFSET into account
+    - Use a while loop to set the boundaries of the reels:
+        while self.reel_index < 5
+    - spawn in each reel if self.reel_index > 0 accounting for the + 300 and X_OFFSET.
+        allocate the index as the key and reel class as the value for the reels dict.
+
+9. Create REEL class.
+    - initialise symbol_list using pygame.sprite.Group()
+    - We also want to randomly shuffle the symbols when they spawn in,
+        we can do this using random.shuffle.
+        Simply list all the symbols (keys) from the dictionary and use
+        random.shuffle() on them. 
+        Use self.shuffled_keys = self.shuffled_keys[:5] to cap the idx.
+    - Obtain the index and item of the shuffled keys using enumerate and add each symbol.
+        the symbol class should be established next.
+            but is has the parameters the (symbol itself, position and index)
+
+10. Create SYMBOL class (inherits the pygame.sprite.Sprite class)
+    - define the sym type by splitting the '/' and '.' from the path_to_file.
+    - Instantiate the self.pos and self.idx from the given parameters.
+    - Create rectangle w/ self.rect 
+    - keep track of the self.x_val to be self.rect.left
+
+11. Spawn in reels with spawn_reels() in machine class __init__.
+    DRAW each symbol in the self.update() with
+        for reel in self.reel_list:
+            self.reel_list[reel].symbol_list.draw(self.display_surface)
+            self.reel_list[reel].symbol_list.update() # For later w/ update method in Symbol class
+
+
+12. create ANIMATE method in REEL class:
+    - Firstly check if self.reel_is_spinning is true.
+        if it is, self.delay_time and self.spin_time -= (delta_time * 1000)
+        while this is happening reel_is_stopping = False.
+        if self.spin_time runs out, or in other words < 0:
+            reel_is_stopping = True 
+        if self.delay_time < 0:
+            each symbol in the symbol_list will move downwards by 100 pixels.
+                symbol.rect.bottom += 100
+        if the top of the symbol is below a certain mark(1200),
+            if so, remove the symbol.
+        after, spawn in a random symbol in place of the above.
+            use self.symbol_list.add(Symbol())
+
+13. We need to receive a method in MACHINE class that receives input.
+so, INPUT method.
+    - Put it in the update() method.
+    - Look for key pressed using pygame.key.get_pressed()
+    - Check if space is pressed using keys[pygame.K_SPACE]
+        if pressed, self.toggle_spinning()
+        and get self.spin_time = pygame.time.get_ticks()
+
+14. define the cooldowns() method.
+    - Only let the player spin if all reels are NOT spinning 
+        use a for loop in self.reels_dict and then self.can_toggle = False and self.spinning = True
+    - In the same method, check if you can't toggle AND if all the reels are not spinning:
+        this can be done by checking each reel in the reels_dict is 'spinning' by using 
+        .count(False) == 5, since there are only 5 reels.
+        If conditions are true, that means no reels are spinning. so set self.can_toggle to True.
+
+15. Setting up the toggle_spinning method in the REELS class.
+    - If you can toggle (self.can_toggle):
+        Store the spin_time by pygame.time.get_ticks()
+        set the self.spinning to the opposite of whatever it was
+        set the self.can_toggle to False because we are now spinning the reels.
+    - in the same if conditional, start the spin by iterating through each reels in the reels_dict,
+        and applying .start_spin(int(reel) * timer) in each reel.
+            in this case, the timer used was 200ms.
+            This time is the delay for the 'staggered' look.  
+
+16. We can now set up the .start_spin() method in reels class:
+    - set the self.delay_time to be the parameter in the .start_spin()
+    - set self.spin_time = 1000 + delay_time # Guessing this is what gives it the animation effect.
+    - set self.reel_is_spinning to be True.
+
+17. Set up the draw_reels method in the MACHINE class
+    - Iterate through the reels_dict and for each reel, 
+        animate it using the delta_time parameter.
+
+18. Define a reel_spin_result method in the REEL class.
+    This class returns the text representation of symbols in a given reel.
+    Use the GAME_INDICES constant and append each reel into a given list. 
+    return the REVERSE of the list. 
+
+19. Define a get_result() method in MACHINE class.
+    Instantiate a self.spin_result in the init.
+    this dictionary will be amde from the reel_spin_result() method in REELS class
+    do it for each reel -> for reel in self.reels_dict:
+
+20. Define a helper function flip_horizontal() to flip the result horizontally.
+    most important thing here is converting the values() in the dictionary to a list and flip it.
+    for x in range(rows):
+        for y in range(cols):
+            horizontal_values2[y][x] = horizontal_values[x][y]
+    
+21. set up a longest_seq function in the win.py
+    Check if there are any matching symbols:
+    the LOGIC utilises a sub_seq_length and longest_seq which are both initialised to be 0.
+    start, end = 0, 0
+    check through all the sequences with the list returned from the helper function.
+    they are matching if hit[i] == hit[i+1] after looping through, that means they MATCHED.
+        If so, increment the sub_seq_length by 1 and if sub_seq_length > longest_seq,
+        set the longest_seq to be sub_seq_length
+        Also increment the start, end by i+2 - [sub_seq_length (for start)]
+            LOGIC IS KINDA WACKY, BE SURE TO CHECK.
+
+22. Set up check_wins() method in MACHINE class.
+    firstly, receive a parameter and flip_horizontal the (result).
+    iterate through each symbol and check if the row.sym(count) > 2.
+        this is a possible win because it implies that there are 3 of the same symbols in a row.
+    if this occurs, enumerate the row and store it as a possible_win variable to get the idx.
+    use the longest_seq function from the win.py and check if the len() of it is greater than 2.
+        this longest_seq() helps to see if there are three matching symols 
+            since hits[i] == hits[i+1] - 1 will check the indices.
+    if the len() of the longest_seq(possible_win) is 3 or more, add it to the hits dictionary with the value of the symbol and matching num.
+        the syntax is complicated:
+            hits[horizontal.index(row) + 1] = [sym, longest_seq(possible_win)]
+    finally, return the hit.
+
+23. Check if game has been won in the cooldowns() method of MACHINE class.
+    if it has, store it by instantiating self.win_data = self.check_wins(self.spin_result)
+
+24. Create PLAYER class.
+    Initialise everything relating to player:
+    self.balance
+    self.bet_size
+    self.last_payout
+    self.total_won
+    self.total_wager
+
+    SET UP a method in this class called get_data which converts all the total information
+    of the player into a dictionary -> player_data = {}
+    use "{:.2f}".format(INFO)
+        RETURN player_data 
+
+    also set up a place_bet() method.
+    the bet will be the self.bet_size 
+    subtract the self.balance from the bat 
+    increment the self.total_wager from the bet. 
+
+25. Instantite the player class in the MACHINE class.
+    self.currPlayer = Player()
+
+26. Set up the pay_player method in the MACHINE class
+    define the multiplier and spin_payout to be 0
+    iterate through all the matching symols in the win_data.values() -> win_data is a parameter.
+    increment the multiplier by the length of each matching symbol 
+    set the spin_payout to be = multiplier * player.bet_size
+    add player balance by the spin payout and decrement the machine's balance
+    store this payout as currPlayer.last_payout.
+
+27. Refer to the input() method in the MACHINE class
+    after SPACE has been pressed, call the currPlayer.place_bet() method 
+    increment the machine balance by the bet size 
+    set the currPlayer last payout to None.
+    also change the check condition from not only if keys[pygame.K_SPACE]
+    need to also check: self.can_toggle and player's balance has more than bet size.
+
+28. create UI class. 
+    firstly, make sure you  set the font, font_size, win_font_size, and text color in the settings.py
+    initialise display_surface, font, bet_font, win_font, and win_text_angle
+
+29. Set up the display_info() method in the UI class.
+    See documentation. TOO LONG
+    After, set up self.update() and call the display_info after drawing the black rect before.
+
+30. Instantiate a UI class in the MACHINE CLASS 
+    and call the self.ui.update() method in the update() method.
+
+31. set win_animation() method in MACHINE class:
+    if animation is still ongoing and there is a win:
+        go through the win_data.items() and extract the keys, values
+        the keys are the rows.
+        if keys == 1:
+            animationRow = 3 
+        elif key == 3:
+            animationRow = 1
+        else:
+            animationRow = 2 
+        set the animation_col = value[1]
+            iterate through each reel in the self.reels_dict, 
+            if the reel is found in the animation_col and it can be animated (instantiated=False in the init)
+            self.reels_dict[reel].symbol_list.sprites()[animationRow].fade_in = True 
+            for each sumbol in this symbol_list:
+                if the symbol is not fade in, set symbol.fade_out to be True.
+
+32. In the SYMBOL class, instantiate self.size_x and self.size_y -> this will be DEFAULT_IMAGE_SIZE dimensions
+    instantiate self.alpha, and self.fade_out self.fade_in to be False 
+
+33. in the update() method for the SYMBOL class, 
+    if you can fade_in:
+        increment the size_x and size_y until a certain boundary (in this case, its 20 more than their sizes)
+        use self.image = pygame.transform.scale(self.image, (size_x, size_y))
+            what this does is that it keeps enlarging the size until it reaches the boundary 
+
+    On the other hand, if not fade_in and fade_out:
+        set a boundary i.e. if self.alpha > 115:
+            self.alpha -= 7
+            self.image.set_alpha(self.alpha) UNSURE ABOUT THIS .
+         
+34. Call the win_animation() method in MACHINE class .update() method at the end
+    set the self.win_animation_ongoing = False on the toggle_spinning 
+        
+35. in the check_wins() method in the MACHINE class, 
+    if a hits is generated (meaning user has won a multiplier):
+        set the self.can_animate to True. 
+    what this would do is it allows the self.can_animate to be True in the win_animation method of the same class 
+
+36. to set the win_animation_ongoing to true, go to cooldowns() method,
+    in the condition that checks any wins has occured, set the win_animation_ongoing to True. 
+    All this allows the conditions in the win_animation method to run!
